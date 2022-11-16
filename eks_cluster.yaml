@@ -1,0 +1,54 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: EKS Cluster Cloudformation Stack
+Parameters:
+  eksClusterName:
+    Type: String
+    Description: Name of EKS cluster
+    Default: "dev"
+  eksVersion:
+    Type: String
+    Description: Version of EKS
+    Default: "1.21"
+  subnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: List of subnets for EKS cluster residing in VPC
+  instanceType:
+    Type: String
+    Description: Instance type for the EKS nodes
+    AllowedValues:
+      - t2.micro
+    Default: t2.micro
+  eksNodeGroupName:
+    Type: String
+    Description: Name of the Node Group
+    Default: eksManagedNodeGroup
+  nodeRole:
+    Type: String
+    Description: IAM Role that manages the eks node group
+
+    
+Resources:
+  EKSCluster:
+    Type: AWS::EKS::Cluster
+    Properties:
+      Name: !Ref eksClusterName
+      Version: !Ref eksVersion
+      RoleArn: !Ref eksClusterRole
+      ResourcesVpcConfig:
+        SubnetIds: !Split [',', !Join [',', !Ref subnetIds]]
+  
+  EKSNodeGroup:
+    Type: AWS::EKS::Nodegroup
+    Properties:
+      CapacityType: ON_DEMAND
+      ClusterName: !Ref eksClusterName
+      InstanceType: !Ref instanceType
+      NodegroupName: !Ref eksNodeGroupName
+      NodeRole: !Ref nodeRole
+      Subnets: !Ref subnetIds
+      ScalingConfig:
+        DesiredSize: 2
+        MinSize: 1
+        MaxSize: 2
+
+    
